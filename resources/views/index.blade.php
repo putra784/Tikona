@@ -63,8 +63,8 @@
                         @endforeach
                     </div>
                     <div class="text-xs text-[var(--charcoal-soft)]">
-                        <span class="font-semibold text-[var(--charcoal)]">&#9733;&#9733;&#9733;&#9733;&#9733; 4.9 /
-                            5.0</span><br>
+                        <span class="font-semibold text-[var(--charcoal)]">&#9733;&#9733;&#9733;&#9733;&#9733;
+                            {{ $averageRating }} / 5.0</span><br>
                         Beloved by 12,000+ patrons in the city
                     </div>
                 </div>
@@ -77,8 +77,8 @@
                 <div class="absolute right-5 top-5 flex items-center gap-2 rounded-2xl bg-white/95 px-4 py-2.5 shadow-sm">
                     <span class="text-[var(--brand)]">&#9733;</span>
                     <div class="text-xs leading-tight">
-                        <p class="font-semibold text-[var(--charcoal)]">4.9 Rating</p>
-                        <p class="text-[var(--charcoal-soft)]">1,240+ verified notes</p>
+                        <p class="font-semibold text-[var(--charcoal)]">{{ $averageRating }} Rating</p>
+                        <p class="text-[var(--charcoal-soft)]">{{ $totalReviews }} verified notes</p>
                     </div>
                 </div>
                 <div
@@ -132,11 +132,11 @@
                     <p class="text-xs font-semibold uppercase tracking-wide text-white/60">1. Choose Order Type</p>
                     <div class="mt-3 grid grid-cols-2 gap-3" role="group" aria-label="Order type">
                         <button type="button" id="order-type-dinein" aria-pressed="true"
-                            class="flex items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition-colors">
+                            class="cursor-pointer flex items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition-colors">
                             &#127859; Dine In
                         </button>
                         <button type="button" id="order-type-takeaway" aria-pressed="false"
-                            class="flex items-center justify-center gap-2 rounded-xl bg-transparent px-4 py-3 text-sm font-semibold text-white/80 ring-1 ring-inset ring-white/20 transition-colors">
+                            class="hover:bg-[var(--charcoal)] cursor-pointer flex items-center justify-center gap-2 rounded-xl bg-transparent px-4 py-3 text-sm font-semibold text-white/80 ring-1 ring-inset ring-white/20 transition-colors">
                             &#128230; Takeaway
                         </button>
                     </div>
@@ -145,7 +145,6 @@
                         <div class="flex items-center justify-between">
                             <p class="text-xs font-semibold uppercase tracking-wide text-white/60">2. Select Your Table
                                 Number</p>
-                            <p class="text-xs text-[var(--brand)]">Check the small bronze plaque on your table</p>
                         </div>
                         <input type="text" name="table_number" id="table_number_display" value="Table 04"
                             aria-label="Table number"
@@ -203,6 +202,7 @@
                         $badge = $badges[$product->name] ?? (optional($product->category ?? null)->name ?? 'Featured');
                         $rating = $product->reviews_avg_rating ?? null;
                     @endphp
+                    
                     <article
                         class="group flex flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-white shadow-[0_4px_20px_rgba(43,36,32,0.05)] transition-shadow hover:shadow-[0_10px_30px_rgba(43,36,32,0.10)]">
                         <div class="relative h-44 w-full overflow-hidden bg-[var(--beige)]">
@@ -390,42 +390,55 @@
 
             if (!dineInBtn || !takeawayBtn) return;
 
+            // Kelas dasar yang digunakan oleh kedua tombol
+            const baseClasses =
+                "order-btn cursor-pointer flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold transition-colors";
+
+            // Style saat tombol AKTIF
+            const activeClasses = "bg-[var(--brand)] text-white";
+
+            // Style saat tombol TIDAK AKTIF (termasuk efek hover)
+            const inactiveClasses =
+                "bg-transparent text-white/80 ring-1 ring-inset ring-white/20 hover:bg-[var(--charcoal)]";
+
             function setActive(type) {
                 const isDineIn = type === 'dine_in';
 
-                dineInBtn.classList.toggle('bg-[var(--brand)]', isDineIn);
-                dineInBtn.classList.toggle('text-white', isDineIn);
-                dineInBtn.classList.toggle('bg-transparent', !isDineIn);
-                dineInBtn.classList.toggle('text-white/80', !isDineIn);
-                dineInBtn.classList.toggle('ring-1', !isDineIn);
-                dineInBtn.classList.toggle('ring-inset', !isDineIn);
-                dineInBtn.classList.toggle('ring-white/20', !isDineIn);
-
-                takeawayBtn.classList.toggle('bg-[var(--brand)]', !isDineIn);
-                takeawayBtn.classList.toggle('text-white', !isDineIn);
-                takeawayBtn.classList.toggle('bg-transparent', isDineIn);
-                takeawayBtn.classList.toggle('text-white/80', isDineIn);
-                takeawayBtn.classList.toggle('ring-1', isDineIn);
-                takeawayBtn.classList.toggle('ring-inset', isDineIn);
-                takeawayBtn.classList.toggle('ring-white/20', isDineIn);
-
-                tableSection.classList.toggle('hidden', !isDineIn);
-                orderTypeInput.value = type;
+                // Set style Dine In
+                dineInBtn.className = `${baseClasses} ${isDineIn ? activeClasses : inactiveClasses}`;
                 dineInBtn.setAttribute('aria-pressed', String(isDineIn));
+
+                // Set style Takeaway
+                takeawayBtn.className = `${baseClasses} ${!isDineIn ? activeClasses : inactiveClasses}`;
                 takeawayBtn.setAttribute('aria-pressed', String(!isDineIn));
+
+                // Tampilkan/sembunyikan section meja & update hidden input
+                if (tableSection) tableSection.classList.toggle('hidden', !isDineIn);
+                if (orderTypeInput) orderTypeInput.value = type;
             }
 
+            // Event listener untuk tombol utama
             dineInBtn.addEventListener('click', () => setActive('dine_in'));
             takeawayBtn.addEventListener('click', () => setActive('takeaway'));
 
+            // Inisialisasi tampilan awal sesuai nilai default
+            const initialType = orderTypeInput ? (orderTypeInput.value || 'dine_in') : 'dine_in';
+            setActive(initialType);
+
+            // Event listener pilihan meja
             document.querySelectorAll('[data-table-option]').forEach((btn) => {
                 btn.addEventListener('click', () => {
-                    document.getElementById('table_number_display').value = 'Table ' + btn.dataset
-                        .tableOption.replace('T-', '0').replace('Bar 1', 'Bar 1');
+                    const tableDisplay = document.getElementById('table_number_display');
+                    if (tableDisplay) {
+                        tableDisplay.value = 'Table ' + btn.dataset.tableOption.replace('T-', '0')
+                            .replace('Bar 1', 'Bar 1');
+                    }
+
                     document.querySelectorAll('[data-table-option]').forEach((b) => {
                         b.classList.remove('bg-[var(--brand)]', 'text-white');
                         b.classList.add('bg-white/10', 'text-white/70');
                     });
+
                     btn.classList.remove('bg-white/10', 'text-white/70');
                     btn.classList.add('bg-[var(--brand)]', 'text-white');
                 });

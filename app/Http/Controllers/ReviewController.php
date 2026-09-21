@@ -25,6 +25,28 @@ class ReviewController extends Controller
         return response()->json($reviews);
     }
 
+    public function summary(): JsonResponse
+    {
+        $averageRating = Review::avg('rating');
+        $totalReviews = Review::count();
+
+        return response()->json([
+            'average_rating' => round($averageRating ?? 0, 1),
+            'total_reviews' => $totalReviews,
+        ]);
+    }
+
+    public function home()
+    {
+        $averageRating = Review::avg('rating');
+        $totalReviews = Review::count();
+
+        return view('home', [
+            'averageRating' => round($averageRating ?? 0, 1),
+            'totalReviews' => $totalReviews,
+        ]);
+    }
+
     /**
      * Customer:
      * Membuat review.
@@ -64,7 +86,7 @@ class ReviewController extends Controller
         if ($alreadyReviewed) {
             return response()->json([
                 'message' =>
-                    'Anda sudah memberikan review untuk produk ini.',
+                'Anda sudah memberikan review untuk produk ini.',
             ], 422);
         }
 
@@ -74,31 +96,31 @@ class ReviewController extends Controller
          */
         $review = Review::create([
             'user_id' =>
-                $request->user()->id,
+            $request->user()->id,
 
             'product_id' =>
-                $product->id,
+            $product->id,
 
             'rating' =>
-                $validated['rating'],
+            $validated['rating'],
 
             /*
              * Review diperlakukan sebagai plain text.
              */
             'description' =>
-                isset($validated['description'])
-                    ? strip_tags(
-                        $validated['description']
-                    )
-                    : null,
+            isset($validated['description'])
+                ? strip_tags(
+                    $validated['description']
+                )
+                : null,
         ]);
 
         return response()->json([
             'message' =>
-                'Review berhasil ditambahkan.',
+            'Review berhasil ditambahkan.',
 
             'data' =>
-                $review->load('user:id,name'),
+            $review->load('user:id,name'),
         ], 201);
     }
 
@@ -141,20 +163,20 @@ class ReviewController extends Controller
         ) {
             $validated['description'] =
                 $validated['description'] !== null
-                    ? strip_tags(
-                        $validated['description']
-                    )
-                    : null;
+                ? strip_tags(
+                    $validated['description']
+                )
+                : null;
         }
 
         $review->update($validated);
 
         return response()->json([
             'message' =>
-                'Review berhasil diperbarui.',
+            'Review berhasil diperbarui.',
 
             'data' =>
-                $review->fresh(),
+            $review->fresh(),
         ]);
     }
 
@@ -179,7 +201,7 @@ class ReviewController extends Controller
 
         return response()->json([
             'message' =>
-                'Review berhasil dihapus.',
+            'Review berhasil dihapus.',
         ]);
     }
 }

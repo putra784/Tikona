@@ -44,6 +44,11 @@ Route::get('/products', [
     'index',
 ]);
 
+Route::get('/reviews/summary', [
+    ReviewController::class,
+    'summary'
+]);
+
 Route::get('/products/{product}', [
     ProductController::class,
     'show',
