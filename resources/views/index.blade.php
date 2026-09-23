@@ -109,27 +109,12 @@
                         Skip the register line entirely. Choose your experience below to
                         customize single-origins, alternative milks, and fresh pastries.
                     </p>
-
-                    <div class="mt-8 grid grid-cols-3 gap-3">
-                        <div class="rounded-xl bg-white/5 p-3.5">
-                            <p class="text-sm font-semibold">Zero Wait</p>
-                            <p class="mt-0.5 text-xs text-white/60">Live tracker</p>
-                        </div>
-                        <div class="rounded-xl bg-white/5 p-3.5">
-                            <p class="text-sm font-semibold">Fresh Pull</p>
-                            <p class="mt-0.5 text-xs text-white/60">Brewed on order</p>
-                        </div>
-                        <div class="rounded-xl bg-white/5 p-3.5">
-                            <p class="text-sm font-semibold">Touchless</p>
-                            <p class="mt-0.5 text-xs text-white/60">Apple &amp; Cards</p>
-                        </div>
-                    </div>
                 </div>
 
                 <form action="/order" method="GET" class="rounded-2xl bg-black/20 p-6">
                     <input type="hidden" name="order_type" id="order_type_input" value="dine_in" />
 
-                    <p class="text-xs font-semibold uppercase tracking-wide text-white/60">1. Choose Order Type</p>
+                    <p class="text-xs font-semibold uppercase tracking-wide text-white/60">Choose Order Type</p>
                     <div class="mt-3 grid grid-cols-2 gap-3" role="group" aria-label="Order type">
                         <button type="button" id="order-type-dinein" aria-pressed="true"
                             class="cursor-pointer flex items-center justify-center gap-2 rounded-xl bg-[var(--brand)] px-4 py-3 text-sm font-semibold text-white transition-colors">
@@ -139,27 +124,6 @@
                             class="hover:bg-[var(--charcoal)] cursor-pointer flex items-center justify-center gap-2 rounded-xl bg-transparent px-4 py-3 text-sm font-semibold text-white/80 ring-1 ring-inset ring-white/20 transition-colors">
                             &#128230; Takeaway
                         </button>
-                    </div>
-
-                    <div id="table-number-section" class="mt-6">
-                        <div class="flex items-center justify-between">
-                            <p class="text-xs font-semibold uppercase tracking-wide text-white/60">2. Select Your Table
-                                Number</p>
-                        </div>
-                        <input type="text" name="table_number" id="table_number_display" value="Table 04"
-                            aria-label="Table number"
-                            class="mt-3 w-full rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm text-white placeholder-white/40 focus:border-[var(--brand)] focus:outline-none" />
-                        <div class="mt-3 flex flex-wrap gap-2">
-                            @foreach (['T-02', 'T-04', 'T-08', 'Bar 1'] as $table)
-                                <button type="button" data-table-option="{{ $table }}"
-                                    class="rounded-full px-3.5 py-1.5 text-xs font-medium transition-colors {{ $table === 'T-04' ? 'bg-[var(--brand)] text-white' : 'bg-white/10 text-white/70 hover:bg-white/15' }}">
-                                    {{ $table }}
-                                </button>
-                            @endforeach
-                        </div>
-                        <p class="mt-3 flex items-center gap-1.5 text-xs text-white/50">
-                            &#8505; Our baristas will deliver your beverages and food directly to this table.
-                        </p>
                     </div>
 
                     <div class="mt-7 flex items-center justify-between">
@@ -192,7 +156,6 @@
 
         {{-- Products --}}
         @if ($bestSellers->count() > 0)
-
             <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ($bestSellers as $product)
                     <x-product-card :product="$product" />
