@@ -68,7 +68,7 @@
         <div class="mx-auto flex max-w-4xl flex-col items-center gap-5 px-6 py-16 text-center lg:px-10">
             <h2 class="text-2xl font-bold text-[var(--charcoal)] sm:text-3xl">Ready for a cup?</h2>
             <a
-                href="{{ route('products.index') }}"
+                href="{{ route('product') }}"
                 class="inline-flex items-center justify-center rounded-full bg-[var(--brand)] px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[var(--brand-dark)]"
             >
                 See the menu

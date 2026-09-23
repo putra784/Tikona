@@ -103,10 +103,6 @@
                 <a href="/product" class="{{ $navLink('/product', 'Product')['classes'] }}">
                     Product
                 </a>
-
-                <a href="/contact" class="{{ $navLink('/contact', 'Contact')['classes'] }}">
-                    Contact
-                </a>
             </nav>
 
             <div class="flex items-center gap-3">
@@ -179,12 +175,6 @@
                         <li>
                             <a href="/product" class="hover:text-[var(--brand)]">
                                 Product
-                            </a>
-                        </li>
-
-                        <li>
-                            <a href="/contact" class="hover:text-[var(--brand)]">
-                                Contact
                             </a>
                         </li>
                     </ul>

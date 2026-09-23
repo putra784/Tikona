@@ -65,7 +65,7 @@
                     <div class="text-xs text-[var(--charcoal-soft)]">
                         <span class="font-semibold text-[var(--charcoal)]">&#9733;&#9733;&#9733;&#9733;&#9733;
                             {{ $averageRating }} / 5.0</span><br>
-                        Beloved by 12,000+ patrons in the city
+                        Beloved by {{ $totalReviews }} patrons in the city
                     </div>
                 </div>
             </div>
@@ -315,7 +315,7 @@
             <p class="text-xs font-semibold uppercase tracking-wide text-[var(--brand)]">Guest Testimonials</p>
             <h2 class="mt-2 text-4xl font-extrabold tracking-tight text-[var(--charcoal)]">Loved by Our Customers</h2>
             <p class="mx-auto mt-2 max-w-md text-sm text-[var(--charcoal-soft)]">
-                Over 12,000 discerning coffee lovers served across our locations every month.
+                Over {{ $totalReviews }} discerning coffee lovers served across our locations every month.
             </p>
 
             <div class="mt-10 grid grid-cols-1 gap-6 text-left sm:grid-cols-3">

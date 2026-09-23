@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -142,7 +143,7 @@ class ProductController extends Controller
         if ($request->hasFile('image')) {
             $validated['image'] =
                 $request->file('image')
-                    ->store('products', 'public');
+                ->store('products', 'public');
         }
 
         $validated['is_available'] =
@@ -213,7 +214,7 @@ class ProductController extends Controller
 
             $validated['image'] =
                 $request->file('image')
-                    ->store('products', 'public');
+                ->store('products', 'public');
         }
 
         $product->update($validated);
@@ -237,7 +238,7 @@ class ProductController extends Controller
         if ($product->details()->exists()) {
             return response()->json([
                 'message' =>
-                    'Produk tidak dapat dihapus karena sudah digunakan dalam transaksi.',
+                'Produk tidak dapat dihapus karena sudah digunakan dalam transaksi.',
             ], 422);
         }
 
@@ -250,6 +251,40 @@ class ProductController extends Controller
 
         return response()->json([
             'message' => 'Produk berhasil dihapus.',
+        ]);
+    }
+
+    public function page(Request $request)
+    {
+        $query = Product::with('category')
+            ->where('is_available', true);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where(
+                'category_id',
+                $request->category_id
+            );
+        }
+
+        $products = $query
+            ->latest()
+            ->paginate(12)
+            ->withQueryString();
+
+        $categories = Category::orderBy('name')->get();
+
+        return view('product', [
+            'products' => $products,
+            'categories' => $categories,
         ]);
     }
 }
