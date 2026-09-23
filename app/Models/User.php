@@ -40,4 +40,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(Review::class);
     }
+
+    public function loginOtps(): HasMany
+    {
+        return $this->hasMany(LoginOtp::class);
+    }
 }

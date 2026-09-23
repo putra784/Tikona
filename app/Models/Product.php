@@ -36,4 +36,9 @@ class Product extends Model
     {
         return $this->hasMany(Review::class);
     }
+
+    public function scopeAvailable($query)
+    {
+        return $query->where('is_available', true);
+    }
 }

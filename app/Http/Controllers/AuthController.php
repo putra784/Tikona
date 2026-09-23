@@ -2,138 +2,76 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    /**
-     * Register customer baru.
-     */
-    public function register(Request $request): JsonResponse
+    public function showLogin()
+    {
+        return view('auth.login');
+    }
+
+    public function showRegister()
+    {
+        return view('auth.register');
+    }
+
+    public function register(Request $request)
     {
         $validated = $request->validate([
-            'name' => [
-                'required',
-                'string',
-                'min:2',
-                'max:255',
-            ],
-
-            'email' => [
-                'required',
-                'string',
-                'email:rfc',
-                'max:255',
-                'unique:users,email',
-            ],
-
-            'password' => [
-                'required',
-                'string',
-                'min:8',
-                'max:72',
-                'confirmed',
-            ],
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
         $user = User::create([
             'name' => $validated['name'],
-            'email' => strtolower($validated['email']),
+            'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
-
-            // User tidak boleh menentukan role sendiri.
             'role' => 'customer',
         ]);
 
-        $token = $user
-            ->createToken('tikona-api')
-            ->plainTextToken;
+        Auth::login($user);
 
-        return response()->json([
-            'message' => 'Registrasi berhasil.',
-            'data' => [
-                'user' => $user,
-                'token' => $token,
-            ],
-        ], 201);
+        $request->session()->regenerate();
+
+        return redirect('/')
+            ->with('success', 'Registration successful.');
     }
 
-    /**
-     * Login.
-     */
-    public function login(Request $request): JsonResponse
+    public function login(Request $request)
     {
-        $validated = $request->validate([
-            'email' => [
-                'required',
-                'email:rfc',
-                'max:255',
-            ],
-
-            'password' => [
-                'required',
-                'string',
-            ],
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
         ]);
 
-        $user = User::where(
-            'email',
-            strtolower($validated['email'])
-        )->first();
+        if (Auth::attempt($credentials)) {
 
-        if (
-            !$user ||
-            !Hash::check(
-                $validated['password'],
-                $user->password
-            )
-        ) {
-            throw ValidationException::withMessages([
-                'email' => [
-                    'Email atau password salah.'
-                ],
-            ]);
+            $request->session()->regenerate();
+
+            return redirect('/')
+                ->with('success', 'Login successful.');
         }
 
-        $token = $user
-            ->createToken('tikona-api')
-            ->plainTextToken;
-
-        return response()->json([
-            'message' => 'Login berhasil.',
-            'data' => [
-                'user' => $user,
-                'token' => $token,
-            ],
-        ]);
+        return back()
+            ->withErrors([
+                'email' => 'Email atau password salah.',
+            ])
+            ->onlyInput('email');
     }
 
-    /**
-     * Logout token yang sedang digunakan.
-     */
-    public function logout(Request $request): JsonResponse
+    public function logout(Request $request)
     {
-        $request->user()
-            ->currentAccessToken()
-            ?->delete();
+        Auth::logout();
 
-        return response()->json([
-            'message' => 'Logout berhasil.',
-        ]);
-    }
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-    /**
-     * User yang sedang login.
-     */
-    public function me(Request $request): JsonResponse
-    {
-        return response()->json([
-            'data' => $request->user(),
-        ]);
+        return redirect('/')
+            ->with('success', 'Logout successful.');
     }
 }
