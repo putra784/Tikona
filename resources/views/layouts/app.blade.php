@@ -112,10 +112,57 @@
                     Order Now
                 </a>
 
-                <a href="/login"
-                    class="rounded-full border border-[var(--line)] px-4 py-2 text-sm font-semibold text-[var(--charcoal)] hover:border-[var(--brand)] hover:text-[var(--brand)] transition-colors">
-                    Login
-                </a>
+                @auth
+
+                    {{-- User sudah login --}}
+                    <div class="relative">
+
+                        <button id="profileButton" type="button"
+                            class="cursor-pointer flex items-center justify-center
+                   w-10 h-10 rounded-full
+                   bg-[#E29C23] text-white
+                   font-semibold text-lg
+                   hover:opacity-90 transition">
+                            {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+                        </button>
+
+                        <div id="profileDropdown"
+                            class="hidden absolute right-0 mt-3 w-44
+                   bg-white rounded-xl shadow-lg
+                   border border-gray-100 overflow-hidden z-50">
+                            <a href="/dashboard"
+                                class="block px-4 py-3 text-gray-700
+                       hover:bg-gray-50 transition">
+                                Dashboard
+                            </a>
+
+                            <form action="/logout" method="POST">
+                                @csrf
+
+                                <button type="submit"
+                                    class="w-full text-left px-4 py-3
+                           text-red-500 hover:bg-red-50 transition">
+                                    Logout
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                @else
+                    {{-- User belum login --}}
+                    <a href="/login"
+                        class="rounded-full
+               border border-[var(--line)]
+               px-5 py-2
+               text-sm font-semibold
+               text-[var(--charcoal)]
+               hover:bg-[var(--brand)]
+               hover:text-white
+               transition-colors">
+                        Login
+                    </a>
+
+                @endauth
 
             </div>
         </div>
@@ -214,6 +261,26 @@
     </footer>
 
     @stack('scripts')
+
+    <script>
+        const profileButton = document.getElementById('profileButton');
+        const profileDropdown = document.getElementById('profileDropdown');
+
+        profileButton?.addEventListener('click', function(event) {
+            event.stopPropagation();
+            profileDropdown.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', function(event) {
+            if (
+                !profileButton?.contains(event.target) &&
+                !profileDropdown?.contains(event.target)
+            ) {
+                profileDropdown?.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
 </body>
 
 </html>

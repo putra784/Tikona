@@ -76,10 +76,7 @@
 
                 <!-- Email Register -->
                 <form action="{{ route('register') }}" method="POST" class="space-y-5">
-
                     @csrf
-
-
                     <!-- Name -->
                     <div>
 

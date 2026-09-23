@@ -65,3 +65,14 @@ Route::get('/auth/google', [GoogleController::class, 'redirect'])
     ->name('google.login');
 
 Route::get('/auth/google/callback', [GoogleController::class, 'callback']);
+
+Route::get('/verify-otp', [AuthController::class, 'showVerifyOtp'])
+    ->name('otp.form');
+
+Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])
+    ->name('otp.verify');
+
+Route::post('/verify-otp/resend', [AuthController::class, 'resendOtp'])
+    ->name('otp.resend');
+
+    
