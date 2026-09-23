@@ -190,58 +190,24 @@
             </div>
         </div>
 
-        @if ($bestSellers->isEmpty())
-            <p
-                class="mt-10 rounded-2xl border border-dashed border-[var(--line)] p-10 text-center text-sm text-[var(--charcoal-soft)]">
-                Our seasonal menu is being refreshed &mdash; check back shortly.
-            </p>
-        @else
-            <div class="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {{-- Products --}}
+        @if ($bestSellers->count() > 0)
+
+            <div class="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ($bestSellers as $product)
-                    @php
-                        $badge = $badges[$product->name] ?? (optional($product->category ?? null)->name ?? 'Featured');
-                        $rating = $product->reviews_avg_rating ?? null;
-                    @endphp
-                    
-                    <article
-                        class="group flex flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-white shadow-[0_4px_20px_rgba(43,36,32,0.05)] transition-shadow hover:shadow-[0_10px_30px_rgba(43,36,32,0.10)]">
-                        <div class="relative h-44 w-full overflow-hidden bg-[var(--beige)]">
-                            <img src="{{ $product->image ? asset('storage/' . $product->image) : 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80' }}"
-                                alt="{{ $product->name }}" loading="lazy"
-                                class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                            <span
-                                class="absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 text-[11px] font-semibold text-[var(--charcoal)] shadow-sm">
-                                {{ $badge }}
-                            </span>
-                        </div>
-
-                        <div class="flex flex-1 flex-col p-5">
-                            <div class="flex items-center justify-between text-xs text-[var(--charcoal-soft)]">
-                                <span>{{ optional($product->category ?? null)->name ?? 'Menu' }}</span>
-                                @if ($rating)
-                                    <span class="flex items-center gap-1 font-medium text-[var(--charcoal)]">
-                                        <span class="text-[var(--brand)]">&#9733;</span> {{ number_format($rating, 1) }}
-                                    </span>
-                                @endif
-                            </div>
-
-                            <h3 class="mt-2 text-base font-semibold text-[var(--charcoal)]">{{ $product->name }}</h3>
-                            <p class="mt-1.5 flex-1 text-sm leading-relaxed text-[var(--charcoal-soft)]">
-                                {{ \Illuminate\Support\Str::limit($product->description, 70) }}
-                            </p>
-
-                            <div class="mt-4 flex items-center justify-between">
-                                <span class="text-lg font-bold text-[var(--charcoal)]">
-                                    Rp {{ number_format($product->price, 0, ',', '.') }}
-                                </span>
-                                <a href="/order?product={{ $product->id }}"
-                                    class="rounded-full bg-[var(--brand)] px-4 py-2 text-xs font-semibold text-white hover:bg-[var(--brand-dark)] transition-colors">
-                                    + Order
-                                </a>
-                            </div>
-                        </div>
-                    </article>
+                    <x-product-card :product="$product" />
                 @endforeach
+            </div>
+        @else
+            {{-- Empty State --}}
+            <div class="mt-8 rounded-2xl border border-[var(--line)] bg-white/60 px-6 py-16 text-center">
+                <h2 class="text-xl font-semibold text-[var(--charcoal)]">
+                    No products found
+                </h2>
+
+                <p class="mt-2 text-sm text-[var(--charcoal-soft)]">
+                    There are currently no available products.
+                </p>
             </div>
         @endif
 

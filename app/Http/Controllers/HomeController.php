@@ -31,7 +31,7 @@ class HomeController extends Controller
         $averageRating = round(Review::avg('rating') ?? 0, 1);
         $totalReviews = Review::count();
 
-        // 3. Kirim kedua variabel ($bestSellers dan $reviews) ke view
+        // 3. Kirim kedua variabel ke view
         return view('index', compact('bestSellers', 'reviews', 'averageRating', 'totalReviews'));
     }
 }
