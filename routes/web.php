@@ -13,3 +13,4 @@ Route::get('/about', function() {
 
 Route::get('/product', [ProductController::class, 'page'])
     ->name('product');
+
