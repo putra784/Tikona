@@ -9,8 +9,8 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class OrderController extends Controller
 {
@@ -181,26 +181,53 @@ class OrderController extends Controller
      */
     public function confirm(Request $request)
     {
+        // User harus login sebelum membuat transaction
+        if (!Auth::check()) {
+            session()->put('url.intended', route('order.review'));
+            
+            return redirect()
+                ->route('login')
+                ->with('info', 'Please login to continue your order.');
+        }
+
         $orderType = session('order_type');
         $cart = session('cart', []);
 
         if (!$orderType || empty($cart)) {
-            return redirect()->route('order.index')->withErrors(['order' => 'Your order session has expired.']);
+            return redirect()
+                ->route('order.index')
+                ->withErrors([
+                    'order' => 'Your order session has expired.'
+                ]);
         }
 
-        // Re-check availability and re-fetch authoritative prices from the database.
-        $products = Product::whereIn('id', array_keys($cart))->available()->get()->keyBy('id');
+        // Re-check product availability
+        // dan ambil harga terbaru dari database.
+        $products = Product::whereIn('id', array_keys($cart))
+            ->available()
+            ->get()
+            ->keyBy('id');
 
+        // Pastikan semua product masih tersedia
         foreach (array_keys($cart) as $productId) {
             if (!$products->has($productId)) {
-                return redirect()->route('order.review')
-                    ->withErrors(['cart' => 'One or more products are no longer available.']);
+                return redirect()
+                    ->route('order.review')
+                    ->withErrors([
+                        'cart' => 'One or more products are no longer available.'
+                    ]);
             }
         }
 
-        $transaction = DB::transaction(function () use ($orderType, $cart, $products) {
+        $transaction = DB::transaction(function () use (
+            $orderType,
+            $cart,
+            $products
+        ) {
+
             $total = 0;
 
+            // Create transaction
             $transaction = Transaction::create([
                 'user_id' => Auth::id(),
                 'order_type' => $orderType,
@@ -208,28 +235,47 @@ class OrderController extends Controller
                 'status' => 'pending',
             ]);
 
+            // Create transaction details
             foreach ($cart as $productId => $data) {
+
                 $product = $products->get($productId);
+
+                $quantity = (int) $data['quantity'];
+
+                if ($quantity < 1) {
+                    throw ValidationException::withMessages([
+                        'cart' => 'Invalid product quantity.'
+                    ]);
+                }
+
+                // Harga authoritative dari database
                 $price = $product->price;
-                $subtotal = $price * $data['quantity'];
+
+                $subtotal = $price * $quantity;
+
                 $total += $subtotal;
 
                 TransactionDetail::create([
                     'transaction_id' => $transaction->id,
                     'product_id' => $product->id,
-                    'quantity' => $data['quantity'],
+                    'quantity' => $quantity,
                     'price' => $price,
                     'subtotal' => $subtotal,
                 ]);
             }
 
-            $transaction->update(['total_price' => $total]);
+            // Update total setelah semua detail dihitung
+            $transaction->update([
+                'total_price' => $total,
+            ]);
 
-            // Payment is simulated for now until Midtrans integration is finished.
+            // Buat payment record.
+            // Payment gateway/session akan diproses
+            // pada halaman payment.
             Payment::create([
                 'transaction_id' => $transaction->id,
-                'midtrans_order_id' => 'SIMULATED-' . Str::upper(Str::random(10)),
-                'payment_method' => 'simulated',
+                'midtrans_order_id' => 'TIKONA-' . $transaction->id,
+                'payment_method' => null,
                 'amount' => $total,
                 'status' => 'pending',
                 'paid_at' => null,
@@ -238,9 +284,16 @@ class OrderController extends Controller
             return $transaction;
         });
 
-        session()->forget(['order_type', 'cart']);
+        // Cart tidak diperlukan lagi setelah transaction dibuat.
+        session()->forget([
+            'order_type',
+            'cart',
+            'pending_order_confirmation',
+        ]);
 
-        return redirect()->route('order.success', $transaction);
+        // Redirect ke halaman PAYMENT, bukan success.
+        return redirect()
+            ->route('order.payment', $transaction);
     }
 
     /**

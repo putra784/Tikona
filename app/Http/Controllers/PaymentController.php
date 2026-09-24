@@ -2,238 +2,132 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Payment;
 use App\Models\Transaction;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
+use Midtrans\Config;
+use Midtrans\Snap;
 
 class PaymentController extends Controller
 {
     /**
-     * Customer:
-     * Membuat payment untuk transaksi.
+     * Menampilkan halaman pembayaran.
      */
-    public function store(Request $request): JsonResponse
+    public function show(Transaction $transaction)
     {
-        $validated = $request->validate([
-            'transaction_id' => [
-                'required',
-                'integer',
-                'exists:transactions,id',
-            ],
+        // Pastikan transaksi milik user yang sedang login.
+        if ($transaction->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Ambil detail transaksi dan payment.
+        $transaction->load([
+            'details.product',
+            'payment',
         ]);
 
-        $transaction = Transaction::findOrFail(
-            $validated['transaction_id']
-        );
-
-        /*
-         * Pastikan transaksi milik user.
-         */
-        if (
-            $transaction->user_id !==
-            $request->user()->id
-        ) {
-            return response()->json([
-                'message' => 'Forbidden.',
-            ], 403);
+        // Pastikan payment tersedia.
+        if (!$transaction->payment) {
+            abort(404, 'Payment not found.');
         }
 
-        /*
-         * Transaksi yang dibatalkan
-         * tidak boleh dibayar.
-         */
-        if ($transaction->status === 'cancelled') {
-            return response()->json([
-                'message' =>
-                    'Transaksi sudah dibatalkan.',
-            ], 422);
-        }
-
-        /*
-         * Satu transaksi hanya memiliki
-         * satu payment.
-         */
-        if ($transaction->payment()->exists()) {
-            return response()->json([
-                'message' =>
-                    'Transaksi sudah memiliki payment.',
-            ], 422);
-        }
-
-        /*
-         * Generate external order ID.
-         */
-        $midtransOrderId =
-            'TIKONA-' .
-            $transaction->id .
-            '-' .
-            Str::upper(Str::random(10));
-
-        /*
-         * Amount HARUS berasal dari database.
-         */
-        $payment = Payment::create([
-            'transaction_id' =>
-                $transaction->id,
-
-            'midtrans_order_id' =>
-                $midtransOrderId,
-
-            'payment_method' =>
-                null,
-
-            'amount' =>
-                $transaction->total_price,
-
-            'status' =>
-                'pending',
-
-            'paid_at' =>
-                null,
-        ]);
-
-        /*
-         * Di sini nantinya kita panggil
-         * Midtrans Snap / Core API.
-         */
-        return response()->json([
-            'message' =>
-                'Payment berhasil dibuat.',
-
-            'data' =>
-                $payment,
-        ], 201);
-    }
-
-    /**
-     * Customer:
-     * Melihat payment miliknya.
-     */
-    public function show(
-        Request $request,
-        Payment $payment
-    ): JsonResponse {
-        if (
-            $payment->transaction->user_id !==
-            $request->user()->id
-        ) {
-            return response()->json([
-                'message' => 'Forbidden.',
-            ], 403);
-        }
-
-        return response()->json([
-            'data' => $payment,
+        return view('order.payment', [
+            'transaction' => $transaction,
+            'payment' => $transaction->payment,
+            'snapToken' => null,
         ]);
     }
 
+
     /**
-     * Midtrans:
-     * Notification webhook.
+     * Membuat Snap Token dari Midtrans.
      */
-    public function notification(
-        Request $request
-    ): JsonResponse {
-        /*
-         * Validasi dasar payload.
-         */
-        $validated = $request->validate([
-            'order_id' => [
-                'required',
-                'string',
-                'max:255',
-            ],
+    public function process(Transaction $transaction)
+    {
+        // Pastikan transaksi milik user yang sedang login.
+        if ($transaction->user_id !== Auth::id()) {
+            abort(403);
+        }
 
-            'transaction_status' => [
-                'required',
-                'string',
-                'max:100',
-            ],
-
-            'payment_type' => [
-                'nullable',
-                'string',
-                'max:100',
-            ],
-
-            'gross_amount' => [
-                'required',
-                'numeric',
-            ],
-
-            'status_code' => [
-                'required',
-                'string',
-                'max:10',
-            ],
-
-            'signature_key' => [
-                'required',
-                'string',
-            ],
+        $transaction->load([
+            'details.product',
+            'payment',
         ]);
 
-        /*
-         * Signature Midtrans harus diverifikasi
-         * menggunakan Server Key sebelum
-         * mempercayai notification.
-         *
-         * Implementasikan melalui service khusus,
-         * jangan taruh Server Key di frontend.
-         */
-
-        // $this->midtransService
-        //     ->verifyNotification($validated);
-
-        $payment = Payment::where(
-            'midtrans_order_id',
-            $validated['order_id']
-        )->first();
+        $payment = $transaction->payment;
 
         if (!$payment) {
-            return response()->json([
-                'message' =>
-                    'Payment tidak ditemukan.',
-            ], 404);
+            abort(404, 'Payment not found.');
+        }
+
+        // Jika sudah dibayar, jangan proses lagi.
+        if ($payment->status === 'paid') {
+            return redirect()
+                ->route('order.success', $transaction)
+                ->with('success', 'This order has already been paid.');
         }
 
         /*
-         * Update status berdasarkan
-         * notification dari Midtrans.
-         */
-        $payment->update([
-            'payment_method' =>
-                $validated['payment_type'] ?? null,
+        |--------------------------------------------------------------------------
+        | Midtrans configuration
+        |--------------------------------------------------------------------------
+        */
 
-            'status' =>
-                $validated['transaction_status'],
-        ]);
+        Config::$serverKey = config('midtrans.server_key');
+        Config::$isProduction = config('midtrans.is_production');
+        Config::$isSanitized = true;
+        Config::$is3ds = true;
+
 
         /*
-         * Jika pembayaran berhasil,
-         * transaksi dapat dikonfirmasi.
-         */
-        if (
-            in_array(
-                $validated['transaction_status'],
-                ['settlement', 'capture'],
-                true
-            )
-        ) {
-            $payment->update([
-                'paid_at' => now(),
-            ]);
+        |--------------------------------------------------------------------------
+        | Transaction data
+        |--------------------------------------------------------------------------
+        */
 
-            $payment->transaction()->update([
-                'status' => 'confirmed',
-            ]);
-        }
+        $params = [
+            'transaction_details' => [
+                'order_id' => $payment->midtrans_order_id,
+                'gross_amount' => (int) $transaction->total_price,
+            ],
 
-        return response()->json([
-            'message' => 'Notification processed.',
+            'item_details' => $transaction->details
+                ->map(function ($detail) {
+                    return [
+                        'id' => (string) $detail->product_id,
+                        'price' => (int) $detail->price,
+                        'quantity' => (int) $detail->quantity,
+                        'name' => $detail->product->name,
+                    ];
+                })
+                ->values()
+                ->toArray(),
+
+            'customer_details' => [
+                'first_name' => Auth::user()->name,
+                'email' => Auth::user()->email,
+            ],
+        ];
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Request Snap Token
+        |--------------------------------------------------------------------------
+        */
+
+        $snapToken = Snap::getSnapToken($params);
+
+
+        /*
+        |--------------------------------------------------------------------------
+        | Return payment page
+        |--------------------------------------------------------------------------
+        */
+
+        return view('order.payment', [
+            'transaction' => $transaction,
+            'payment' => $payment,
+            'snapToken' => $snapToken,
         ]);
     }
 }

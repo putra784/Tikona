@@ -7,6 +7,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Auth\GoogleController;
+use App\Http\Controllers\PaymentController;
 
 Route::get('/', [HomeController::class, 'index'])
     ->name('index');
@@ -21,21 +22,46 @@ Route::get('/product', [ProductController::class, 'page'])
 Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
-// Order flow
 Route::prefix('order')->name('order.')->group(function () {
-    Route::get('/', [OrderController::class, 'index'])->name('index');
-    Route::post('/type', [OrderController::class, 'setType'])->name('type');
 
-    Route::get('/products', [OrderController::class, 'products'])->name('products');
+    Route::get('/', [OrderController::class, 'index'])
+        ->name('index');
 
-    Route::post('/cart', [OrderController::class, 'addToCart'])->name('cart.add');
-    Route::put('/cart/{product}', [OrderController::class, 'updateCart'])->name('cart.update');
-    Route::delete('/cart/{product}', [OrderController::class, 'removeFromCart'])->name('cart.remove');
+    Route::post('/type', [OrderController::class, 'setType'])
+        ->name('type');
 
-    Route::get('/review', [OrderController::class, 'review'])->name('review');
-    Route::post('/confirm', [OrderController::class, 'confirm'])->name('confirm');
+    Route::get('/products', [OrderController::class, 'products'])
+        ->name('products');
 
-    Route::get('/success/{transaction}', [OrderController::class, 'success'])->name('success');
+    Route::post('/cart', [OrderController::class, 'addToCart'])
+        ->name('cart.add');
+
+    Route::put('/cart/{product}', [OrderController::class, 'updateCart'])
+        ->name('cart.update');
+
+    Route::delete('/cart/{product}', [OrderController::class, 'removeFromCart'])
+        ->name('cart.remove');
+
+    Route::get('/review', [OrderController::class, 'review'])
+        ->name('review');
+
+    Route::post('/confirm', [OrderController::class, 'confirm'])
+        ->name('confirm');
+
+
+    // Payment
+    Route::middleware('auth')->group(function () {
+
+        Route::get('/payment/{transaction}', [PaymentController::class, 'show'])
+            ->name('payment');
+
+        Route::post('/payment/{transaction}/process', [PaymentController::class, 'process'])
+            ->name('payment.process');
+    });
+
+
+    Route::get('/success/{transaction}', [OrderController::class, 'success'])
+        ->name('success');
 });
 
 Route::get('/login', [AuthController::class, 'showLogin'])
