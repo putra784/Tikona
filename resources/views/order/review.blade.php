@@ -1,8 +1,63 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="en">
 
-@section('title', 'Review Order — Tikona Coffee')
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-@section('content')
+    <title>@yield('title', 'Start Your Order — Tikona Coffee')</title>
+
+    {{-- Urbanist, used across the entire interface --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <style>
+        :root {
+            --brand: #E29C23;
+            --brand-dark: #C6841A;
+            --brand-soft: #FBEBCE;
+            --cream: #FDF8F0;
+            --beige: #F3E9D7;
+            --charcoal: #2B2420;
+            --charcoal-soft: #6B6058;
+            --line: #EAE0CD;
+        }
+
+        html,
+        body {
+            font-family: 'Urbanist', ui-sans-serif, system-ui, sans-serif;
+            background-color: var(--cream);
+            color: var(--charcoal);
+        }
+
+        .skip-link {
+            position: absolute;
+            left: -9999px;
+            top: 0;
+            z-index: 100;
+            background: var(--charcoal);
+            color: #fff;
+            padding: .75rem 1.25rem;
+            border-radius: 0 0 .5rem 0;
+        }
+
+        .skip-link:focus {
+            left: 0;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--brand);
+            outline-offset: 2px;
+        }
+    </style>
+
+    @stack('styles')
+</head>
+
+<body class="min-h-screen bg-[#FAF8F4] text-stone-900">
 
     <div class="mx-auto max-w-4xl px-6 py-10">
 
@@ -95,4 +150,6 @@
 
     </div>
 
-@endsection
+</body>
+
+</html>

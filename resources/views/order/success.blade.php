@@ -1,8 +1,3 @@
-@extends('layouts.app')
-
-@section('title', 'Order Confirmed — Tikona Coffee')
-
-@section('content')
     <div class="max-w-md mx-auto text-center py-8">
         <div class="w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-3xl mx-auto mb-4">
             &#10003;
@@ -36,4 +31,3 @@
             </a>
         </div>
     </div>
-@endsection

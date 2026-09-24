@@ -108,14 +108,14 @@
             <div class="flex items-center gap-3">
 
                 <a href="/order"
-                    class="rounded-full border border-[var(--line)] px-5 py-2 text-sm font-semibold text-white bg-[var(--brand)] hover:bg-[var(--brand-dark)] transition-colors">
+                    class="hidden sm:inline-block rounded-full border border-[var(--line)] px-5 py-2 text-sm font-semibold text-white bg-[var(--brand)] hover:bg-[var(--brand-dark)] transition-colors">
                     Order Now
                 </a>
 
                 @auth
 
                     {{-- User sudah login --}}
-                    <div class="relative">
+                    <div class="relative hidden md:block">
 
                         <button id="profileButton" type="button"
                             class="cursor-pointer flex items-center justify-center
@@ -151,7 +151,7 @@
                 @else
                     {{-- User belum login --}}
                     <a href="/login"
-                        class="rounded-full
+                        class="hidden md:inline-block rounded-full
                border border-[var(--line)]
                px-5 py-2
                text-sm font-semibold
@@ -164,6 +164,59 @@
 
                 @endauth
 
+                {{-- Mobile hamburger toggle --}}
+                <button id="mobileMenuButton" type="button"
+                    class="inline-flex items-center justify-center w-10 h-10 rounded-full border border-[var(--line)] text-[var(--charcoal)] md:hidden"
+                    aria-label="Toggle menu" aria-expanded="false" aria-controls="mobileMenu">
+                    <svg id="mobileMenuIconOpen" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        aria-hidden="true">
+                        <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="1.8"
+                            stroke-linecap="round" />
+                    </svg>
+                    <svg id="mobileMenuIconClose" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        aria-hidden="true" class="hidden">
+                        <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="1.8"
+                            stroke-linecap="round" />
+                    </svg>
+                </button>
+
+            </div>
+        </div>
+
+        {{-- ============ MOBILE MENU PANEL ============ --}}
+        <div id="mobileMenu" class="hidden md:hidden border-t border-[var(--line)] bg-[var(--cream)]">
+            <nav class="flex flex-col px-6 py-4 gap-1 text-[15px]" aria-label="Mobile Primary">
+                <a href="/" class="rounded-lg px-3 py-2.5 {{ $navLink('/', 'Home')['classes'] }}">Home</a>
+                <a href="/about"
+                    class="rounded-lg px-3 py-2.5 {{ $navLink('/about', 'About')['classes'] }}">About</a>
+                <a href="/product"
+                    class="rounded-lg px-3 py-2.5 {{ $navLink('/product', 'Product')['classes'] }}">Product</a>
+            </nav>
+
+            <div class="flex flex-col gap-3 px-6 pb-6">
+                <a href="/order"
+                    class="w-full text-center rounded-full border border-[var(--line)] px-5 py-2.5 text-sm font-semibold text-white bg-[var(--brand)] hover:bg-[var(--brand-dark)] transition-colors">
+                    Order Now
+                </a>
+
+                @auth
+                    <a href="/dashboard"
+                        class="w-full text-center rounded-full border border-[var(--line)] px-5 py-2.5 text-sm font-semibold text-[var(--charcoal)] hover:bg-[var(--brand)] hover:text-white transition-colors">
+                        Dashboard
+                    </a>
+                    <form action="/logout" method="POST">
+                        @csrf
+                        <button type="submit"
+                            class="w-full text-center rounded-full border border-[var(--line)] px-5 py-2.5 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors">
+                            Logout
+                        </button>
+                    </form>
+                @else
+                    <a href="/login"
+                        class="w-full text-center rounded-full border border-[var(--line)] px-5 py-2.5 text-sm font-semibold text-[var(--charcoal)] hover:bg-[var(--brand)] hover:text-white transition-colors">
+                        Login
+                    </a>
+                @endauth
             </div>
         </div>
     </header>
@@ -277,6 +330,33 @@
                 !profileDropdown?.contains(event.target)
             ) {
                 profileDropdown?.classList.add('hidden');
+            }
+        });
+
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobileMenuButton');
+        const mobileMenu = document.getElementById('mobileMenu');
+        const mobileMenuIconOpen = document.getElementById('mobileMenuIconOpen');
+        const mobileMenuIconClose = document.getElementById('mobileMenuIconClose');
+
+        mobileMenuButton?.addEventListener('click', function(event) {
+            event.stopPropagation();
+            const isHidden = mobileMenu.classList.toggle('hidden');
+            mobileMenuButton.setAttribute('aria-expanded', String(!isHidden));
+            mobileMenuIconOpen?.classList.toggle('hidden', !isHidden);
+            mobileMenuIconClose?.classList.toggle('hidden', isHidden);
+        });
+
+        document.addEventListener('click', function(event) {
+            if (
+                mobileMenu && !mobileMenu.classList.contains('hidden') &&
+                !mobileMenu.contains(event.target) &&
+                !mobileMenuButton?.contains(event.target)
+            ) {
+                mobileMenu.classList.add('hidden');
+                mobileMenuButton?.setAttribute('aria-expanded', 'false');
+                mobileMenuIconOpen?.classList.remove('hidden');
+                mobileMenuIconClose?.classList.add('hidden');
             }
         });
     </script>

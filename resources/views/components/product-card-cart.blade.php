@@ -1,5 +1,47 @@
 @props(['product', 'quantity' => 0])
 
+<style>
+    :root {
+        --brand: #E29C23;
+        --brand-dark: #C6841A;
+        --brand-soft: #FBEBCE;
+        --cream: #FDF8F0;
+        --beige: #F3E9D7;
+        --charcoal: #2B2420;
+        --charcoal-soft: #6B6058;
+        --line: #EAE0CD;
+    }
+
+    html,
+    body {
+        font-family: 'Urbanist', ui-sans-serif, system-ui, sans-serif;
+        background-color: var(--cream);
+        color: var(--charcoal);
+    }
+
+    .skip-link {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        z-index: 100;
+        background: var(--charcoal);
+        color: #fff;
+        padding: .75rem 1.25rem;
+        border-radius: 0 0 .5rem 0;
+    }
+
+    .skip-link:focus {
+        left: 0;
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--brand);
+        outline-offset: 2px;
+    }
+</style>
+
+@stack('styles')
+
 <article
     class="group flex flex-col overflow-hidden rounded-2xl border border-[var(--line)] bg-white transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_30px_-14px_rgba(43,36,32,0.3)]">
 
@@ -90,7 +132,7 @@
 
                             <button type="submit"
                                 class="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--line)] bg-white text-lg font-medium text-[var(--charcoal)] transition-all hover:border-[var(--brand)] hover:text-[var(--brand)]">
-                                −
+                                -
                             </button>
 
                         </form>

@@ -74,5 +74,3 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])
 
 Route::post('/verify-otp/resend', [AuthController::class, 'resendOtp'])
     ->name('otp.resend');
-
-    

@@ -64,8 +64,9 @@ class OrderController extends Controller
 
         $products = Product::available()->with('category')->get();
         $cart = session('cart', []);
+        $orderType = session('order_type');
 
-        return view('order.products', compact('products', 'cart'));
+        return view('order.products', compact('orderType', 'products', 'cart'));
     }
 
     /**
