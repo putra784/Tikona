@@ -12,7 +12,7 @@ use App\Http\Controllers\PaymentController;
 Route::get('/', [HomeController::class, 'index'])
     ->name('index');
 
-Route::get('/about', function() {
+Route::get('/about', function () {
     return view('about');
 });
 
@@ -57,6 +57,11 @@ Route::prefix('order')->name('order.')->group(function () {
 
         Route::post('/payment/{transaction}/process', [PaymentController::class, 'process'])
             ->name('payment.process');
+
+        Route::get('/payment/{transaction}/status', [
+            PaymentController::class,
+            'checkStatus'
+        ])->name('payment.status');
     });
 
 

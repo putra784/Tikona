@@ -10,6 +10,7 @@ use App\Models\Payment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Midtrans\Notification;
+use Midtrans\Transaction as MidtransTransaction;
 
 class PaymentController extends Controller
 {
@@ -199,5 +200,88 @@ class PaymentController extends Controller
         return response()->json([
             'message' => 'Notification processed'
         ]);
+    }
+
+    public function checkStatus(Transaction $transaction)
+    {
+        // Pastikan transaksi milik user yang login
+        if ($transaction->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        $transaction->load('payment');
+
+        if (!$transaction->payment) {
+            abort(404, 'Payment not found.');
+        }
+
+        Config::$serverKey = config('midtrans.server_key');
+        Config::$isProduction = config('midtrans.is_production');
+
+        try {
+            $status = (object) MidtransTransaction::status(
+                $transaction->payment->midtrans_order_id
+            );
+
+            $midtransStatus = $status->transaction_status;
+            $fraudStatus = $status->fraud_status ?? null;
+
+            DB::transaction(function () use (
+                $transaction,
+                $midtransStatus,
+                $fraudStatus
+            ) {
+                if (
+                    $midtransStatus === 'settlement' ||
+                    (
+                        $midtransStatus === 'capture' &&
+                        $fraudStatus === 'accept'
+                    )
+                ) {
+                    $transaction->payment->update([
+                        'status' => 'paid',
+                        'paid_at' => now(),
+                    ]);
+
+                    $transaction->update([
+                        'status' => 'confirmed',
+                    ]);
+                } elseif ($midtransStatus === 'pending') {
+                    $transaction->payment->update([
+                        'status' => 'pending',
+                    ]);
+
+                    $transaction->update([
+                        'status' => 'pending',
+                    ]);
+                } elseif (
+                    in_array($midtransStatus, [
+                        'deny',
+                        'cancel',
+                        'expire',
+                    ])
+                ) {
+                    $transaction->payment->update([
+                        'status' => 'failed',
+                    ]);
+
+                    $transaction->update([
+                        'status' => 'cancelled',
+                    ]);
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'midtrans_status' => $midtransStatus,
+                'payment_status' => $transaction->payment->fresh()->status,
+                'transaction_status' => $transaction->fresh()->status,
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to check payment status.',
+            ], 500);
+        }
     }
 }
