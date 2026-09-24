@@ -8,6 +8,7 @@ use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Auth\GoogleController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', [HomeController::class, 'index'])
     ->name('index');
@@ -105,3 +106,10 @@ Route::post('/verify-otp', [AuthController::class, 'verifyOtp'])
 
 Route::post('/verify-otp/resend', [AuthController::class, 'resendOtp'])
     ->name('otp.resend');
+
+Route::middleware('auth')->group(function () {
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->name('dashboard');
+
+});
