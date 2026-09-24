@@ -6,6 +6,10 @@ use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
 use Midtrans\Config;
 use Midtrans\Snap;
+use App\Models\Payment;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Midtrans\Notification;
 
 class PaymentController extends Controller
 {
@@ -128,6 +132,72 @@ class PaymentController extends Controller
             'transaction' => $transaction,
             'payment' => $payment,
             'snapToken' => $snapToken,
+        ]);
+    }
+
+    public function notification(Request $request)
+    {
+        Config::$serverKey = config('midtrans.server_key');
+        Config::$isProduction = config('midtrans.is_production');
+
+        $notification = new Notification();
+
+        $orderId = $notification->order_id;
+        $transactionStatus = $notification->transaction_status;
+        $fraudStatus = $notification->fraud_status;
+
+        $payment = Payment::where(
+            'midtrans_order_id',
+            $orderId
+        )->first();
+
+        if (!$payment) {
+            return response()->json([
+                'message' => 'Payment not found'
+            ], 404);
+        }
+
+        DB::transaction(function () use (
+            $payment,
+            $transactionStatus,
+            $fraudStatus
+        ) {
+            if (
+                $transactionStatus === 'settlement' ||
+                (
+                    $transactionStatus === 'capture' &&
+                    $fraudStatus === 'accept'
+                )
+            ) {
+                $payment->update([
+                    'status' => 'paid',
+                    'paid_at' => now(),
+                ]);
+
+                $payment->transaction->update([
+                    'status' => 'confirmed',
+                ]);
+            } elseif ($transactionStatus === 'pending') {
+                $payment->update([
+                    'status' => 'pending',
+                ]);
+            } elseif (
+                $transactionStatus === 'deny' ||
+                $transactionStatus === 'cancel' ||
+                $transactionStatus === 'expire'
+            ) {
+                $payment->update([
+                    'status' => 'failed',
+                ]);
+
+                $payment->transaction->update([
+                    'status' => 'cancelled',
+                ]);
+            }
+        });
+
+        return response()->json([
+            'message' => 'Notification processed'
         ]);
     }
 }
